@@ -1,5 +1,5 @@
 module JsonRpc
-  CallResult = Struct.new(:result. :id, keyword_args: true) do
+  CallResult = Struct.new(:result, :id, keyword_init: true) do
     def to_json
       {
         jsonrpc: "2.0",
@@ -9,7 +9,7 @@ module JsonRpc
     end
   end
 
-  CallError = Struct.new(:error, :id, keyword_args: true) do
+  CallError = Struct.new(:error, :id, keyword_init: true) do
     def to_json
       {
         jsonrpc: "2.0",
@@ -18,4 +18,5 @@ module JsonRpc
       }.to_json
     end
   end
+
 end

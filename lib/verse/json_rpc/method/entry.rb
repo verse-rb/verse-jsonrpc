@@ -7,7 +7,7 @@ module JsonRpc
         if result.success?
           exposition_instance.instance_exec(params, &callback)
         else
-          JsonRpc::InvalidParamsError.new(id:, data: result.errors)
+          raise JsonRpc::InvalidParamsError.new(id:, data: result.errors)
         end
       end
     end

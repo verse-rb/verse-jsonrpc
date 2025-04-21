@@ -1,14 +1,15 @@
 # frozen_string_literal: true
 
+require "verse/schema"
 
 module Verse
   module JsonRpc
-    def self.register(path = "_jsonapi", collection = :default)
-    end
   end
 end
 
 require_relative "json_rpc/version"
+
 require_relative "json_rpc/errors"
+require_relative "json_rpc/output"
 require_relative "json_rpc/schemas"
-require_relative "json_rpc/method"
+require_relative "json_rpc/method/collection"

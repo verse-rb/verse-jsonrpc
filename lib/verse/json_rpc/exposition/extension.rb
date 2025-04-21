@@ -40,19 +40,20 @@ module Verse
 
             if params.is_a?(Array)
               # Batch execution
-              output = params.select do |param|
-                rpc_method, id, rpc_params = params.values_at(:method, :id, :params)
+              output = \
+                params.select do |param|
+                  rpc_method, id, rpc_params = params.values_at(:method, :id, :params)
 
-                o = json_rpc_collection.execute(rpc_method, id, rpc_params, self)
-                id ? o : nil # Discard if id is nil
-              rescue JsonRpc::Error => error
-                if id
-                  JsonRpc::CallError.new(
-                    error:,
-                    id:,
-                  )
+                  o = json_rpc_collection.execute(rpc_method, id, rpc_params, self)
+                  id ? o : nil # Discard if id is nil
+                rescue JsonRpc::Error => error
+                  if id
+                    JsonRpc::CallError.new(
+                      error:,
+                      id:,
+                    )
+                  end
                 end
-              end
 
               # As per JSON-RPC 2.0 spec, if the id is nil (notification),
               # the response should be 204 No Content
