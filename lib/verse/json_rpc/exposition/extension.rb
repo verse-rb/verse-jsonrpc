@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+require_relative "./param_schemas"
+require_relative "./dsl"
+
 module Verse
   module JsonRpc
     module Exposition
@@ -7,7 +10,7 @@ module Verse
       # The extension module for Verse::Http::Exposition::Base
       # @see Verse::Http::Exposition::Base
       module Extension
-        def jsonrpc(
+        def json_rpc(
           http_path: "",
           http_method: :post,
           http_opts: {},
@@ -17,7 +20,7 @@ module Verse
           json_rpc_collection = DSL.new(&block)
 
           build_expose(
-            on_http(http_method, http_path, **http_opts, renderer: Verse::JsonApi::Renderer)
+            on_http(http_method, http_path, **http_opts, renderer: Verse::Http::Renderer::Json)
           ) do
             desc "JSON-RPC API endpoint"
 
@@ -33,9 +36,9 @@ module Verse
           end
 
           # Useful for introspection/reflection/debugging
-          define_class_method("jsonrpc_collection"){ json_rpc_collection }
+          define_singleton_method("jsonrpc_collection"){ json_rpc_collection }
 
-          define_method(method) do
+          define_method(base_method) do
             output = nil
 
             if params.is_a?(Array)

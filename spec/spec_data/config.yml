@@ -1,0 +1,10 @@
+# Basic configuration for verse-jsonrpc tests
+service_name: "verse-jsonrpc-test"
+
+plugins:
+  - name: http # Load the HTTP plugin for transport
+
+# Add any specific configurations needed for testing if necessary
+# For example, logging level:
+# logger:
+#   level: :debug

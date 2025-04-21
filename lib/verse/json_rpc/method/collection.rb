@@ -1,33 +1,35 @@
-module JsonRpc
-  module Method
-    class Collection
-      attr_reader :methods
+module Verse
+  module JsonRpc
+    module Method
+      class Collection
+        attr_reader :methods
 
-      def initialize
-        @methods = {}
-      end
-
-      def execute(method_name, id, params, exposition_instance)
-        entry = fetch(method_name) do
-          JsonRpc::MethodNotFoundError.new(id:)
+        def initialize
+          @methods = {}
         end
 
-        output = entry.execute(
-          id,
-          params,
-          exposition_instance
-        )
-      end
+        def execute(method_name, id, params, exposition_instance)
+          entry = fetch(method_name) do
+            JsonRpc::MethodNotFoundError.new(id:)
+          end
 
-      def add(entry)
-        @methods ||= {}
+          output = entry.execute(
+            id,
+            params,
+            exposition_instance
+          )
+        end
 
-        method_name_sym = entry.name.to_sym
-        raise "Method already registered: #{method_name}" if @methods.key?(method_name_sym)
+        def add(entry)
+          @methods ||= {}
 
-        @methods[method_name_sym] = method
+          method_name_sym = entry.name.to_sym
+          raise "Method already registered: #{method_name}" if @methods.key?(method_name_sym)
 
-        self
+          @methods[method_name_sym] = entry
+
+          self
+        end
       end
     end
   end
