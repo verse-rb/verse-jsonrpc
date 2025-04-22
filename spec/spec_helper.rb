@@ -34,10 +34,14 @@ end
 RSpec.configure do |config|
   # Add user fixture (adjust roles as needed for JSON-RPC tests)
   Verse::Spec.add_user("user", :user)
+  Verse::Spec.add_user("system", :system)
 
   # set a dummy role for testing (adjust permissions as needed)
   Verse::Auth::SimpleRoleBackend[:user] = %w[
     test.*.*
+  ]
+  Verse::Auth::SimpleRoleBackend[:system] = %w[
+    *.*.*
   ]
 
   # Enable flags like --only-failures and --next-failure

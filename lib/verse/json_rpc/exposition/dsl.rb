@@ -18,7 +18,7 @@ module Verse
               @input = value
               self
             elsif block_given?
-              Verse::Schema.define(&block)
+              @input = Verse::Schema.define(&block)
               self
             else
               @input
@@ -34,7 +34,7 @@ module Verse
               @output = value
               self
             elsif block_given?
-              Verse::Schema.define(&block)
+              @output = Verse::Schema.define(&block)
               self
             else
               @output

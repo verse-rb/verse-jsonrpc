@@ -9,8 +9,8 @@ module Verse
         end
 
         def execute(method_name, id, params, exposition_instance)
-          entry = fetch(method_name) do
-            JsonRpc::MethodNotFoundError.new(id:)
+          entry = @methods.fetch(method_name) do
+            raise JsonRpc::MethodNotFoundError.new(id:)
           end
 
           output = entry.execute(
@@ -21,9 +21,8 @@ module Verse
         end
 
         def add(entry)
-          @methods ||= {}
-
           method_name_sym = entry.name.to_sym
+
           raise "Method already registered: #{method_name}" if @methods.key?(method_name_sym)
 
           @methods[method_name_sym] = entry

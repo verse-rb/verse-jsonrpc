@@ -3,7 +3,7 @@
 require "spec_helper"
 require_relative "../spec_data/test_expo"
 
-RSpec.describe Verse::JsonRpc::Exposition::Extension, type: :exposition do
+RSpec.describe Verse::JsonRpc::Exposition::Extension, type: :exposition, as: :system do
   # Include HTTP spec helpers for making requests
   include Verse::Http::Spec::HttpHelper
 
@@ -53,33 +53,35 @@ RSpec.describe Verse::JsonRpc::Exposition::Extension, type: :exposition do
       it "returns an authentication error without credentials" do
         post "/rpc", json_rpc_request(method, params, request_id)
 
-        expect_status(200) # JSON-RPC errors are usually returned with HTTP 200
-        expect_json(
+        expect(last_response.status).to eq(200) # JSON-RPC errors are usually returned with HTTP 200
+        body = JSON.parse(last_response.body, symbolize_names: true)
+        expect(body).to match(
           jsonrpc: "2.0",
           error: {
             code: Verse::JsonRpc::Errors::AUTHENTICATION_ERROR, # Or the specific code for auth errors
-            message: String # Check for the presence of an error message
+            message: a_kind_of(String) # Check for the presence of an error message
           },
           id: request_id
         )
         # Optionally check the specific error message if it's consistent
-        # expect(json_body[:error][:message]).to include("Authentication required")
+        # expect(body[:error][:message]).to include("Authentication required")
       end
 
       it "returns an error if params are invalid" do
         post "/rpc", json_rpc_request(method, { wrong_param: "foo" }, request_id), auth: "user"
 
-        expect_status(200)
-        expect_json(
+        expect(last_response.status).to eq(200)
+        body = JSON.parse(last_response.body, symbolize_names: true)
+        expect(body).to match(
           jsonrpc: "2.0",
           error: {
             code: Verse::JsonRpc::Errors::INVALID_PARAMS,
-            message: String,
-            data: Hash # Often contains details about the validation failure
+            message: a_kind_of(String),
+            data: a_kind_of(Hash) # Often contains details about the validation failure
           },
           id: request_id
         )
-        expect(json_body[:error][:message]).to include("message") # Should mention the missing field
+        expect(body[:error][:message]).to include("message") # Should mention the missing field
       end
     end
 
@@ -90,13 +92,14 @@ RSpec.describe Verse::JsonRpc::Exposition::Extension, type: :exposition do
       it "returns a JSON-RPC error response" do
         post "/rpc", json_rpc_request(method, {}, request_id) # No params needed, no auth
 
-        expect_status(200)
-        expect_json(
+        expect(last_response.status).to eq(200)
+        body = JSON.parse(last_response.body, symbolize_names: true)
+        expect(body).to match(
           jsonrpc: "2.0",
           error: {
             code: Verse::JsonRpc::Errors::INTERNAL_ERROR, # Or a more specific code if mapped
             message: "Validation Failed: This is a test error",
-            data: Hash # May contain stack trace or other details depending on config
+            data: a_kind_of(Hash) # May contain stack trace or other details depending on config
           },
           id: request_id
         )
@@ -111,8 +114,9 @@ RSpec.describe Verse::JsonRpc::Exposition::Extension, type: :exposition do
       it "executes successfully without authentication" do
         post "/rpc", json_rpc_request(method, params, request_id)
 
-        expect_status(200)
-        expect_json(
+        expect(last_response.status).to eq(200)
+        body = JSON.parse(last_response.body, symbolize_names: true)
+        expect(body).to eq(
           jsonrpc: "2.0",
           result: { result: 20 },
           id: request_id
@@ -150,12 +154,13 @@ RSpec.describe Verse::JsonRpc::Exposition::Extension, type: :exposition do
 
       post "/rpc", batch_request # Send the array as the body
 
-      expect_status(200)
-      expect(json_body).to be_an(Array)
-      expect(json_body.size).to eq(4) # 4 responses expected (notification doesn't get one)
+      expect(last_response.status).to eq(200)
+      body = JSON.parse(last_response.body, symbolize_names: true)
+      expect(body).to be_an(Array)
+      expect(body.size).to eq(4) # 4 responses expected (notification doesn't get one)
 
       # Check responses (order should match request order, excluding notification)
-      expect(json_body).to contain_exactly(
+      expect(body).to contain_exactly(
         # Response for public_method (id: 1)
         a_hash_including(jsonrpc: "2.0", result: { result: 10 }, id: 1),
         # Response for echo (id: 2) - Auth error
@@ -185,12 +190,13 @@ RSpec.describe Verse::JsonRpc::Exposition::Extension, type: :exposition do
     it "handles an empty batch request array" do
       post "/rpc", []
 
-      expect_status(200) # Or potentially a specific error? Check spec. JSON-RPC spec says Invalid Request.
-      expect_json(
+      expect(last_response.status).to eq(200) # Or potentially a specific error? Check spec. JSON-RPC spec says Invalid Request.
+      body = JSON.parse(last_response.body, symbolize_names: true)
+      expect(body).to match(
         jsonrpc: "2.0",
         error: {
           code: Verse::JsonRpc::Errors::INVALID_REQUEST,
-          message: String
+          message: a_kind_of(String)
         },
         id: nil # Error for invalid request structure often has null id
       )
@@ -215,12 +221,13 @@ RSpec.describe Verse::JsonRpc::Exposition::Extension, type: :exposition do
 
       # Expect a generic HTTP error or a JSON-RPC Parse Error depending on middleware
       # For now, let's assume it results in a Parse Error from the JSON-RPC handler perspective
-      expect_status(200)
-       expect_json(
+      expect(last_response.status).to eq(200)
+      body = JSON.parse(last_response.body, symbolize_names: true)
+      expect(body).to match(
         jsonrpc: "2.0",
         error: {
           code: Verse::JsonRpc::Errors::PARSE_ERROR,
-          message: String
+          message: a_kind_of(String)
         },
         id: nil
       )
@@ -231,12 +238,13 @@ RSpec.describe Verse::JsonRpc::Exposition::Extension, type: :exposition do
     it "returns Parse Error for invalid JSON" do
       post "/rpc", "invalid json {", content_type: "application/json"
 
-      expect_status(200) # JSON-RPC errors return HTTP 200
-      expect_json(
+      expect(last_response.status).to eq(200) # JSON-RPC errors return HTTP 200
+      body = JSON.parse(last_response.body, symbolize_names: true)
+      expect(body).to match(
         jsonrpc: "2.0",
         error: {
           code: Verse::JsonRpc::Errors::PARSE_ERROR,
-          message: String # Specific message might vary based on parser
+          message: a_kind_of(String) # Specific message might vary based on parser
         },
         id: nil # Parse errors might not be able to determine an ID
       )
@@ -245,12 +253,13 @@ RSpec.describe Verse::JsonRpc::Exposition::Extension, type: :exposition do
     it "returns Invalid Request for non-object request" do
       post "/rpc", "123", content_type: "application/json"
 
-      expect_status(200)
-      expect_json(
+      expect(last_response.status).to eq(200)
+      body = JSON.parse(last_response.body, symbolize_names: true)
+      expect(body).to match(
         jsonrpc: "2.0",
         error: {
           code: Verse::JsonRpc::Errors::INVALID_REQUEST,
-          message: String
+          message: a_kind_of(String)
         },
         id: nil
       )
@@ -259,46 +268,49 @@ RSpec.describe Verse::JsonRpc::Exposition::Extension, type: :exposition do
      it "returns Invalid Request for request missing 'jsonrpc' field" do
       post "/rpc", { method: "echo", params: { message: "test" }, id: 1 }
 
-      expect_status(200)
-      expect_json(
+      expect(last_response.status).to eq(200)
+      body = JSON.parse(last_response.body, symbolize_names: true)
+      expect(body).to match(
         jsonrpc: "2.0",
         error: {
           code: Verse::JsonRpc::Errors::INVALID_REQUEST,
-          message: String # Should mention missing 'jsonrpc'
+          message: a_kind_of(String) # Should mention missing 'jsonrpc'
         },
         id: 1 # ID might be present in this case
       )
-      expect(json_body[:error][:message]).to include("jsonrpc")
+      expect(body[:error][:message]).to include("jsonrpc")
     end
 
     it "returns Invalid Request for request missing 'method' field" do
       post "/rpc", { jsonrpc: "2.0", params: { message: "test" }, id: 1 }
 
-      expect_status(200)
-      expect_json(
+      expect(last_response.status).to eq(200)
+      body = JSON.parse(last_response.body, symbolize_names: true)
+      expect(body).to match(
         jsonrpc: "2.0",
         error: {
           code: Verse::JsonRpc::Errors::INVALID_REQUEST,
-          message: String # Should mention missing 'method'
+          message: a_kind_of(String) # Should mention missing 'method'
         },
         id: 1
       )
-       expect(json_body[:error][:message]).to include("method")
+       expect(body[:error][:message]).to include("method")
     end
 
     it "returns Method Not Found for non-existent method" do
       post "/rpc", json_rpc_request("method_does_not_exist", {}, 999)
 
-      expect_status(200)
-      expect_json(
+      expect(last_response.status).to eq(200)
+      body = JSON.parse(last_response.body, symbolize_names: true)
+      expect(body).to match(
         jsonrpc: "2.0",
         error: {
           code: Verse::JsonRpc::Errors::METHOD_NOT_FOUND,
-          message: String # Should mention the method name
+          message: a_kind_of(String) # Should mention the method name
         },
         id: 999
       )
-      expect(json_body[:error][:message]).to include("method_does_not_exist")
+      expect(body[:error][:message]).to include("method_does_not_exist")
     end
 
     # Invalid Params is already tested within the 'echo' method context.
