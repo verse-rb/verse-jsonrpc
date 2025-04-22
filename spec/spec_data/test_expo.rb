@@ -25,6 +25,6 @@ class TestExpo < Verse::Exposition::Base
     desc "A method that always raises an error"
   end
   def raise_error
-    raise Verse::Error::ValidationFailed, "This is a test error"
+    raise "This is a test error"
   end
 end

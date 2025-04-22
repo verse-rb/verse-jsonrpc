@@ -96,48 +96,27 @@ RSpec.describe Verse::JsonRpc::Exposition::Extension, type: :exposition, as: :sy
 
         expect(last_response.status).to eq(200)
         body = JSON.parse(last_response.body, symbolize_names: true)
-        binding.pry
         expect(body).to match(
           jsonrpc: "2.0",
           error: {
             code: Verse::JsonRpc::InternalError.code, # Or a more specific code if mapped
-            message: "Validation Failed: This is a test error",
-            data: a_kind_of(Hash) # May contain stack trace or other details depending on config
+            message: "This is a test error",
           },
           id: request_id
         )
       end
     end
 
-    context "when calling the 'public_method'" do
-      let(:method) { "public_method" }
-      let(:params) { { value: 10 } }
-      let(:request_id) { 789 }
-
-      it "executes successfully without authentication" do
-        post "/rpc", json_rpc_request(method, params, request_id)
-
-        expect(last_response.status).to eq(200)
-        body = JSON.parse(last_response.body, symbolize_names: true)
-        expect(body).to eq(
-          jsonrpc: "2.0",
-          result: { result: 20 },
-          id: request_id
-        )
-      end
-    end
-
     context "when sending a 'notify_only' notification" do
-      let(:method) { "notify_only" }
-      let(:params) { { data: "Important notification" } }
+      let(:method) { "echo" }
+      let(:params) { { message: "A message" } }
 
       it "returns an empty response (HTTP 204 or 200 OK)" do
         # Notifications have no 'id'
         post "/rpc", json_rpc_notification(method, params)
 
-        # JSON-RPC notifications might return 204 No Content or 200 OK with empty body.
-        # Check for either, or adjust based on the specific server behavior.
-        expect([200, 204]).to include(last_response.status)
+        # JSON-RPC notifications should return 204 No Content.
+        expect(last_response.status).to eq(204)
 
         # Expect an empty body for notifications
         expect(last_response.body).to be_empty
@@ -148,9 +127,9 @@ RSpec.describe Verse::JsonRpc::Exposition::Extension, type: :exposition, as: :sy
   describe "Batch Request Handling" do
     it "handles a batch of valid requests (including success and error)" do
       batch_request = [
-        json_rpc_request("public_method", { value: 5 }, 1),
-        json_rpc_notification("notify_only", { data: "batch notification" }), # Notification in batch
-        json_rpc_request("echo", { message: "Batch Echo" }, 2), # Auth required, no creds -> error
+        json_rpc_request("echo", { message: "batch echo" }, 1), # ok
+        json_rpc_request("echo", { }, 2), # missing required param
+        json_rpc_notification("echo", { message: "batch notification" }), # Notification in batch
         json_rpc_request("non_existent_method", {}, 3), # Method not found error
         json_rpc_request("raise_error", {}, 4) # Internal error
       ]

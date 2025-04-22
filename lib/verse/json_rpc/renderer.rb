@@ -36,13 +36,14 @@ module Verse
 
       def render(result, ctx)
         ctx.content_type("application/json")
+
+        if result.nil? || result.is_a?(Array) && result.empty?
+          ctx.response.status = 204
+          return
+        end
+
         ctx.response.status = 200
-
-        output = result.to_json
-
-        ctx.response.status = output.empty? ? 204 : 200
-
-        output
+        result.to_json
       end
     end
   end
