@@ -134,7 +134,7 @@ RSpec.describe Verse::JsonRpc::Exposition::Extension, type: :exposition, as: :sy
         json_rpc_request("raise_error", {}, 4) # Internal error
       ]
 
-      post "/rpc", batch_request # Send the array as the body
+      post "/rpc", batch_request, {"CONTENT_TYPE" => "application/json"} # Send the array as the body
 
       expect(last_response.status).to eq(200)
       body = JSON.parse(last_response.body, symbolize_names: true)
@@ -143,26 +143,33 @@ RSpec.describe Verse::JsonRpc::Exposition::Extension, type: :exposition, as: :sy
 
       # Check responses (order should match request order, excluding notification)
       expect(body).to contain_exactly(
-        # Response for public_method (id: 1)
-        a_hash_including(jsonrpc: "2.0", result: { result: 10 }, id: 1),
-        # Response for echo (id: 2) - Auth error
+        # Response for echo (id: 1) - Success
+        a_hash_including(jsonrpc: "2.0", result: { echo_message: "Echo: batch echo" }, id: 1),
+        # Response for echo (id: 2) - Invalid Params
         a_hash_including(
           jsonrpc: "2.0",
-          error: a_hash_including(code: Verse::JsonRpc::Errors::AUTHENTICATION_ERROR),
+          error: a_hash_including(
+            code: Verse::JsonRpc::InvalidParamsError.code,
+            message: "message: is required",
+            data: { message: ["is required"] }
+          ),
           id: 2
         ),
         # Response for non_existent_method (id: 3) - Method not found
         a_hash_including(
           jsonrpc: "2.0",
-          error: a_hash_including(code: Verse::JsonRpc::Errors::METHOD_NOT_FOUND),
+          error: a_hash_including(
+            code: Verse::JsonRpc::MethodNotFoundError.code,
+            message: "Method not found" # Or a more specific message if generated
+          ),
           id: 3
         ),
         # Response for raise_error (id: 4) - Internal error
         a_hash_including(
           jsonrpc: "2.0",
           error: a_hash_including(
-            code: Verse::JsonRpc::Errors::INTERNAL_ERROR,
-            message: "Validation Failed: This is a test error"
+            code: Verse::JsonRpc::InternalError.code,
+            message: "This is a test error"
           ),
           id: 4
         )
@@ -177,7 +184,7 @@ RSpec.describe Verse::JsonRpc::Exposition::Extension, type: :exposition, as: :sy
       expect(body).to match(
         jsonrpc: "2.0",
         error: {
-          code: Verse::JsonRpc::Errors::INVALID_REQUEST,
+          code: Verse::JsonRpc::InvalidRequestError.code,
           message: a_kind_of(String)
         },
         id: nil # Error for invalid request structure often has null id
@@ -208,7 +215,7 @@ RSpec.describe Verse::JsonRpc::Exposition::Extension, type: :exposition, as: :sy
       expect(body).to match(
         jsonrpc: "2.0",
         error: {
-          code: Verse::JsonRpc::Errors::PARSE_ERROR,
+          code: Verse::JsonRpc::ParseError.code,
           message: a_kind_of(String)
         },
         id: nil
@@ -225,7 +232,7 @@ RSpec.describe Verse::JsonRpc::Exposition::Extension, type: :exposition, as: :sy
       expect(body).to match(
         jsonrpc: "2.0",
         error: {
-          code: Verse::JsonRpc::Errors::PARSE_ERROR,
+          code: Verse::JsonRpc::ParseError.code,
           message: a_kind_of(String) # Specific message might vary based on parser
         },
         id: nil # Parse errors might not be able to determine an ID
@@ -240,7 +247,7 @@ RSpec.describe Verse::JsonRpc::Exposition::Extension, type: :exposition, as: :sy
       expect(body).to match(
         jsonrpc: "2.0",
         error: {
-          code: Verse::JsonRpc::Errors::INVALID_REQUEST,
+          code: Verse::JsonRpc::InvalidRequestError.code,
           message: a_kind_of(String)
         },
         id: nil
@@ -255,7 +262,7 @@ RSpec.describe Verse::JsonRpc::Exposition::Extension, type: :exposition, as: :sy
       expect(body).to match(
         jsonrpc: "2.0",
         error: {
-          code: Verse::JsonRpc::Errors::INVALID_REQUEST,
+          code: Verse::JsonRpc::InvalidRequestError.code,
           message: a_kind_of(String) # Should mention missing 'jsonrpc'
         },
         id: 1 # ID might be present in this case
@@ -271,7 +278,7 @@ RSpec.describe Verse::JsonRpc::Exposition::Extension, type: :exposition, as: :sy
       expect(body).to match(
         jsonrpc: "2.0",
         error: {
-          code: Verse::JsonRpc::Errors::INVALID_REQUEST,
+          code: Verse::JsonRpc::InvalidRequestError.code,
           message: a_kind_of(String) # Should mention missing 'method'
         },
         id: 1
@@ -287,7 +294,7 @@ RSpec.describe Verse::JsonRpc::Exposition::Extension, type: :exposition, as: :sy
       expect(body).to match(
         jsonrpc: "2.0",
         error: {
-          code: Verse::JsonRpc::Errors::METHOD_NOT_FOUND,
+          code: Verse::JsonRpc::MethodNotFoundError.code,
           message: a_kind_of(String) # Should mention the method name
         },
         id: 999

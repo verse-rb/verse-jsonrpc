@@ -8,7 +8,12 @@ module Verse
       field?(:id, [String, Integer])
     end
 
-    BatchSchema = Verse::Schema.array(InputSchema)
+    BatchSchema = Verse::Schema.define do
+      # Note: Verse Http is using a
+      # _body field to store the request body
+      # if the json is not a hash.
+      field :_body, Array, of: InputSchema
+    end
 
     AllowedInput = Verse::Schema.scalar(InputSchema, BatchSchema)
 

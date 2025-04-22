@@ -32,13 +32,14 @@ module Verse
           out
         end
 
-        protected def handle_batch(expo_instance, parans)
+        protected def handle_batch(expo_instance, params)
           # Batch processing
           params.map do |param|
             id, method, params = param.values_at(:id, :method, :params)
 
             output = execute(method, id, expo_instance, params)
-          end
+            id && output
+          end.compact
         end
 
         protected def handle_single(expo_instance, params)
@@ -51,9 +52,9 @@ module Verse
         def handle(expo_instance)
           params = expo_instance.params
 
-          if params.is_a?(Array)
+          if params[:_body] && params[:_body].is_a?(Array)
             # Batch request
-            handle_batch(expo_instance, params)
+            handle_batch(expo_instance, params[:_body])
           else
             # Single request
             handle_single(expo_instance, params)
