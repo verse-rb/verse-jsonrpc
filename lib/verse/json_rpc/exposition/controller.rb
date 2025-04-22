@@ -2,12 +2,14 @@ module Verse
   module JsonRpc
     module Exposition
       class Controller
-        attr_reader :collection, :validate_output
+        attr_reader :collection
 
         def initialize(validate_output: false)
           @collection = {}
           @validate_output = validate_output
         end
+
+        def validate_output? = !!@validate_output
 
         def add_method(name, &method)
           if @collection.key?(name)
@@ -30,35 +32,44 @@ module Verse
           out
         end
 
+        protected def handle_batch(expo_instance, parans)
+          # Batch processing
+          params.map do |param|
+            param => {id:, method:, params:}
+
+            output = \
+              begin
+                execute(method, id, expo_instance, params)
+              rescue JsonRpc::Error => e
+                output
+              rescue StandardError => e
+                # Not great, but
+                # We cannot use the
+                # default logger handler
+                # from exposition handler
+                # stack :(
+                Verse.logger.warn(log_error(e))
+
+                JsonRpc::InternalError.new(id:)
+              end
+          end
+        end
+
+        protected def handle_single(expo_instance, params)
+          params => {id:, method:, params:}
+
+          execute(method, id, expo_instance, params)
+        end
+
         def handle(expo_instance)
           params = expo_instance.params
 
           if params.is_a?(Array)
-            # Batch processing
-            params.each do |param|
-              param => {id:, method:, params:}
-
-              output = \
-                begin
-                  execute(method, id, expo_instance, params)
-                rescue JsonRpc::Error => e
-                  output
-                rescue StandardError => e
-                  # Not great, but
-                  # We cannot use the
-                  # default logger handler
-                  # from exposition handler
-                  # stack :(
-                  Verse.logger.warn(log_error(e))
-
-                  JsonRpc::InternalError.new(id:)
-                end
-
-            end
-
-
+            # Batch request
+            handle_batch(expo_instance, params)
           else
             # Single request
+            handle_single(expo_instance, params)
           end
         end
 
@@ -67,7 +78,7 @@ module Verse
             raise JsonRpc::MethodNotFoundError.new(id: expo_instance.id)
           end.call(expo_instance, params)
 
-          CallResult.new(result:, id:)
+          JsonRpc::CallResult.new(result:, id:)
         end
       end
     end

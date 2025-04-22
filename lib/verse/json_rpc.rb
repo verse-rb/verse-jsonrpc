@@ -1,17 +1,8 @@
 # frozen_string_literal: true
 
 require "verse/core"
-require "verse/http"
-
 require "verse/schema"
-
-
-module Verse
-  module JsonRpc
-  end
-end
-
-require_relative "json_rpc/version"
+require "verse/http"
 
 Dir["#{__dir__}/**/*.rb"].sort.each do |file|
   # do not load CLI nor specs files unless told otherwise.

@@ -31,7 +31,10 @@ module Verse
             # a http hook, then rerouted to another hook,
             # we must use the current exposition instance.
             # This is to make it work with batches for example.
-            expo_instance.params = params
+            #
+            # UGLY REPLACE OF METHOD. I'm curious how
+            # to replace this with a better solution.
+            expo_instance.define_singleton_method(:params){ safe_params }
 
             result = expo_instance.run do
               hook.method.bind(self).call
