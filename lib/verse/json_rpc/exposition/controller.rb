@@ -37,21 +37,7 @@ module Verse
           params.map do |param|
             param => {id:, method:, params:}
 
-            output = \
-              begin
-                execute(method, id, expo_instance, params)
-              rescue JsonRpc::Error => e
-                output
-              rescue StandardError => e
-                # Not great, but
-                # We cannot use the
-                # default logger handler
-                # from exposition handler
-                # stack :(
-                Verse.logger.warn(log_error(e))
-
-                JsonRpc::InternalError.new(id:)
-              end
+            output = execute(method, id, expo_instance, params)
           end
         end
 
@@ -74,11 +60,21 @@ module Verse
         end
 
         def execute(method, id, expo_instance, params)
-          result = @collection.fetch(method) do
-            raise JsonRpc::MethodNotFoundError.new(id: expo_instance.id)
-          end.call(expo_instance, params)
+          begin
+            result = @collection.fetch(method) do
+              raise JsonRpc::MethodNotFoundError.new(id: expo_instance.id)
+            end.call(expo_instance, params)
 
-          JsonRpc::CallResult.new(result:, id:)
+            JsonRpc::CallResult.new(result:, id:)
+          rescue JsonRpc::Error => e
+            e
+          rescue Verse::Error::ValidationFailed => e
+            JsonRpc::InvalidParamsError.new(id:, data: e.source)
+          rescue StandardError => e
+            Verse.logger.warn(log_error(e))
+
+            JsonRpc::InternalError.new(id:)
+          end
         end
       end
     end

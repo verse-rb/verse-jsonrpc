@@ -5,8 +5,8 @@ module Verse
 
       def initialize(id: nil, code: nil, message: nil, data: nil)
         @id = id
-        @code = code || self.code
-        @message = message || self.message
+        @code = code || self.class.code
+        @message = message || self.class.message
         @data = data
 
         super message
@@ -14,9 +14,8 @@ module Verse
 
       def self.define(code, message, data = nil)
         Class.new(self) do
-          define_method(:code) { code }
-          define_method(:message) { message }
-          define_method(:data) { data }
+          define_singleton_method(:code) { code }
+          define_singleton_method(:message) { message }
         end
       end
 
@@ -44,6 +43,7 @@ module Verse
     InvalidParamsError = Error.define(-32602, "Invalid params")
     InternalError = Error.define(-32603, "Internal error")
 
+    AuthenticationError = Error.define(-32001, "Authentication error")
     ServerError = Error.define(-32000, "Server error")
   end
 end

@@ -51,20 +51,21 @@ RSpec.describe Verse::JsonRpc::Exposition::Extension, type: :exposition, as: :sy
       end
 
       it "returns an authentication error without credentials" do
-        post "/rpc", json_rpc_request(method, params, request_id)
+        as_user nil do
+          post "/rpc", json_rpc_request(method, params, request_id)
+        end
 
-        expect(last_response.status).to eq(200) # JSON-RPC errors are usually returned with HTTP 200
+        expect(last_response.status).to eq(401)
         body = JSON.parse(last_response.body, symbolize_names: true)
         expect(body).to match(
           jsonrpc: "2.0",
           error: {
-            code: Verse::JsonRpc::Errors::AUTHENTICATION_ERROR, # Or the specific code for auth errors
+            code: Verse::JsonRpc::AuthenticationError.code, # Or the specific code for auth errors
             message: a_kind_of(String) # Check for the presence of an error message
           },
-          id: request_id
+          id: nil # The reason for nil is that the authentication check
+                  # is made before the request is processed
         )
-        # Optionally check the specific error message if it's consistent
-        # expect(body[:error][:message]).to include("Authentication required")
       end
 
       it "returns an error if params are invalid" do
@@ -72,16 +73,17 @@ RSpec.describe Verse::JsonRpc::Exposition::Extension, type: :exposition, as: :sy
 
         expect(last_response.status).to eq(200)
         body = JSON.parse(last_response.body, symbolize_names: true)
+
         expect(body).to match(
           jsonrpc: "2.0",
           error: {
-            code: Verse::JsonRpc::Errors::INVALID_PARAMS,
-            message: a_kind_of(String),
-            data: a_kind_of(Hash) # Often contains details about the validation failure
+            code: Verse::JsonRpc::InvalidParamsError.code,
+            message: "Invalid params",
+            data: {message: ["is required"]}
           },
           id: request_id
         )
-        expect(body[:error][:message]).to include("message") # Should mention the missing field
+
       end
     end
 
@@ -94,10 +96,11 @@ RSpec.describe Verse::JsonRpc::Exposition::Extension, type: :exposition, as: :sy
 
         expect(last_response.status).to eq(200)
         body = JSON.parse(last_response.body, symbolize_names: true)
+        binding.pry
         expect(body).to match(
           jsonrpc: "2.0",
           error: {
-            code: Verse::JsonRpc::Errors::INTERNAL_ERROR, # Or a more specific code if mapped
+            code: Verse::JsonRpc::InternalError.code, # Or a more specific code if mapped
             message: "Validation Failed: This is a test error",
             data: a_kind_of(Hash) # May contain stack trace or other details depending on config
           },
