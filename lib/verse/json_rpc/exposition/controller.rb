@@ -2,11 +2,12 @@ module Verse
   module JsonRpc
     module Exposition
       class Controller
-        attr_reader :collection
+        attr_reader :collection, :batch_limit
 
-        def initialize(validate_output: false)
+        def initialize(validate_output: false, batch_limit: 100)
           @collection = {}
           @validate_output = validate_output
+          @batch_limit = batch_limit
         end
 
         def validate_output? = !!@validate_output
@@ -53,6 +54,13 @@ module Verse
           params = expo_instance.params
 
           if (arr = params[:_body]) && arr.is_a?(Array)
+            if arr.size > @batch_limit
+              raise JsonRpc::InvalidRequestError.new(
+                message: "Batch size limit exceeded",
+                data: { batch_limit: @batch_limit }
+              )
+            end
+
             # Batch request
             handle_batch(expo_instance, arr)
           else

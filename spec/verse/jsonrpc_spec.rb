@@ -209,6 +209,30 @@ RSpec.describe Verse::JsonRpc::Exposition::Extension, type: :exposition, as: :sy
       expect(last_response.status).to eq(422)
       # Body content might vary depending on the Rack middleware, not necessarily JSON-RPC format.
     end
+
+    it "returns Invalid Request error if batch size exceeds limit" do
+      # Create a batch with 6 requests (limit is 5)
+      batch_request = 6.times.map do |i|
+        json_rpc_request("echo", { message: "test #{i}" }, i + 1)
+      end
+
+      post "/rpc", batch_request, { "CONTENT_TYPE" => "application/json" }
+
+      # This is a JSON-RPC level error, so status should be 200
+      pp last_response.body
+      expect(last_response.status).to eq(400)
+      body = JSON.parse(last_response.body, symbolize_names: true)
+
+      expect(body).to match(
+        jsonrpc: "2.0",
+        error: {
+          code: Verse::JsonRpc::InvalidRequestError.code,
+          message: "Batch size limit exceeded",
+          data: { batch_limit: 5 }
+        },
+        id: nil # Error applies to the batch structure itself
+      )
+    end
   end
 
   describe "Protocol Error Handling" do

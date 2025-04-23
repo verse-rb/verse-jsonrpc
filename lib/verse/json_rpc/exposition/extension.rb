@@ -25,9 +25,11 @@ module Verse
         def json_rpc(
           http_path: "",
           http_method: :post,
-          http_opts: {}
+          http_opts: {},
+          validate_output: false,
+          batch_limit: 100
         )
-          @__json_rpc_controller__ = Controller.new
+          @__json_rpc_controller__ = Controller.new(validate_output:, batch_limit:)
 
           base_method = :__jsonrpc_handler__
 

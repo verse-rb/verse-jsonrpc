@@ -27,6 +27,9 @@ module Verse
           # we will route
           ctx.response.status = 401
           AuthenticationError.new.to_json
+        when Verse::Error::ValidationFailed
+          ctx.response.status = 422
+          InvalidParamsError.new(message: error.message).to_json
         when  Verse::JsonRpc::Error
           error.to_json
         else

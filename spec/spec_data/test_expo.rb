@@ -5,7 +5,7 @@ class TestExpo < Verse::Exposition::Base
   include Verse::JsonRpc::Exposition::Extension
 
   # Define the HTTP path for the JSON-RPC endpoint
-  json_rpc http_path: "rpc"
+  json_rpc http_path: "rpc", batch_limit: 5
 
   expose json_rpc_method do
     input do
