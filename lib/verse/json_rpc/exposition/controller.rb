@@ -52,9 +52,9 @@ module Verse
         def handle(expo_instance)
           params = expo_instance.params
 
-          if params[:_body] && params[:_body].is_a?(Array)
+          if (arr = params[:_body]) && arr.is_a?(Array)
             # Batch request
-            handle_batch(expo_instance, params[:_body])
+            handle_batch(expo_instance, arr)
           else
             # Single request
             handle_single(expo_instance, params)

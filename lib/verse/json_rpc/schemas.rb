@@ -12,7 +12,7 @@ module Verse
       # Note: Verse Http is using a
       # _body field to store the request body
       # if the json is not a hash.
-      field :_body, Array, of: InputSchema
+      field(:_body, Array, of: InputSchema).rule("must contain at least one element"){ |v| v.size > 0 }
     end
 
     AllowedInput = Verse::Schema.scalar(InputSchema, BatchSchema)
