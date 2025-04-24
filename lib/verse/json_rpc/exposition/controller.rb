@@ -54,7 +54,7 @@ module Verse
           params = expo_instance.params
 
           if (arr = params[:_body]) && arr.is_a?(Array)
-            if arr.size > @batch_limit
+            if @batch_limit && arr.size > @batch_limit
               raise JsonRpc::InvalidRequestError.new(
                 message: "Batch size limit exceeded",
                 data: { batch_limit: @batch_limit }
