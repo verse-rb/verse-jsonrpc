@@ -23,17 +23,24 @@ module Verse
 
         case error
         when Verse::Error::Authorization
-          # Because verse http will deal with the authorization,
-          # we will route
           ctx.response.status = 401
           AuthenticationError.new.to_json
         when Verse::Error::ValidationFailed
           ctx.response.status = 422
           InvalidParamsError.new(message: error.message).to_json
         when Verse::JsonRpc::Error
+          ctx.response.status = 400
           error.to_json
         else
-          InternalError.new.to_json
+          # :nocov:
+          # This is a fallback for unexpected errors
+          ctx.response.status = 500
+          if error.respond_to?(:message)
+            InternalError.new(message: error.message).to_json
+          else
+            InternalError.new.to_json
+          end
+          # :nocov:
         end
       end
 

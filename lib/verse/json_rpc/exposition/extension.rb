@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require_relative "./param_schemas"
-require_relative "./dsl"
 
 module Verse
   module JsonRpc
@@ -14,8 +13,10 @@ module Verse
 
         def __json_rpc_controller__
           if @__json_rpc_controller__.nil?
+            # :nocov:
             raise "the json rpc controller is not setup. " \
                   "use json_rpc to initialize your exposition to json_rpc"
+            # :nocov:
           end
 
           @__json_rpc_controller__
@@ -34,8 +35,10 @@ module Verse
           base_method = :__jsonrpc_handler__
 
           if respond_to?(base_method)
+            # :nocov:
             raise ArgumentError,
                   "only one jsonrpc handler is authorized per exposition class"
+            # :nocov:
           end
 
           exposition = build_expose(

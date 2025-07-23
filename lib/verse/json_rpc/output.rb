@@ -11,15 +11,5 @@ module Verse
         }.to_json(*opts)
       end
     end
-
-    CallError = Struct.new(:error, :id, keyword_init: true) do
-      def to_json(*opts)
-        {
-          jsonrpc: "2.0",
-          id:,
-          error: error.to_h
-        }.to_json(*opts)
-      end
-    end
   end
 end
