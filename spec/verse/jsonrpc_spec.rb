@@ -241,6 +241,60 @@ RSpec.describe Verse::JsonRpc::Exposition::Extension, type: :exposition, as: :sy
     end
   end
 
+  describe "Batch Failure Modes" do
+    context "when batch_failure is :continue (default)" do
+      it "executes all requests even if some fail" do
+        batch_request = [
+          json_rpc_request("echo", { message: "first" }, 1),
+          json_rpc_request("raise_error", {}, 2), # This will fail
+          json_rpc_request("echo", { message: "third" }, 3)
+        ]
+
+        silent do
+          post "/rpc", batch_request, { "CONTENT_TYPE" => "application/json" }
+        end
+
+        expect(last_response.status).to eq(200)
+        body = JSON.parse(last_response.body, symbolize_names: true)
+
+        expect(body.size).to eq(3)
+        expect(body).to contain_exactly(
+          a_hash_including(id: 1, result: { echo_message: "Echo: first" }),
+          a_hash_including(id: 2, error: a_hash_including(message: "This is a test error")),
+          a_hash_including(id: 3, result: { echo_message: "Echo: third" })
+        )
+      end
+    end
+
+    context "when batch_failure is :stop" do
+      before(:all) do
+        TestExpoStopOnError.register
+      end
+
+      it "stops execution after the first failure" do
+        batch_request = [
+          json_rpc_request("echo", { message: "first" }, 1),
+          json_rpc_request("raise_error", {}, 2), # This will fail
+          json_rpc_request("echo", { message: "third" }, 3) # This should not be executed
+        ]
+
+        silent do
+          post "/rpc_stop", batch_request, { "CONTENT_TYPE" => "application/json" }
+        end
+
+        expect(last_response.status).to eq(200)
+        body = JSON.parse(last_response.body, symbolize_names: true)
+
+        expect(body.size).to eq(3)
+        expect(body).to contain_exactly(
+          a_hash_including(id: 1, result: { echo_message: "Echo: first" }),
+          a_hash_including(id: 2, error: a_hash_including(message: "This is a test error")),
+          a_hash_including(id: 3, error: a_hash_including(message: "Batch execution cancelled due to previous error"))
+        )
+      end
+    end
+  end
+
   describe "Protocol Error Handling" do
     it "returns Parse Error for invalid JSON" do
       silent do
