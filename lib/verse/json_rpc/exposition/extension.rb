@@ -27,7 +27,8 @@ module Verse
           http_method: :post,
           http_opts: {},
           validate_output: false,
-          batch_limit: 100
+          batch_limit: 100,
+          batch_failure: :continue
         )
           @__json_rpc_controller__ = Controller.new(validate_output:, batch_limit:)
 
@@ -47,7 +48,7 @@ module Verse
           end
 
           define_method(base_method){
-            self.class.__json_rpc_controller__.handle(self)
+            self.class.__json_rpc_controller__.handle(self, batch_failure:)
           }
 
           attach_exposition base_method, exposition

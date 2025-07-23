@@ -33,14 +33,31 @@ module Verse
           out
         end
 
-        protected def handle_batch(expo_instance, params)
+        protected def handle_batch(expo_instance, params, batch_failure:)
+          cancel_execution = false
+
           # Batch processing
-          params.map do |param|
+          responses = params.map do |param|
             id, method, params = param.values_at(:id, :method, :params)
 
-            output = execute(method, id, expo_instance, params)
+            output = \
+              if cancel_execution
+                JsonRpc::InternalError.new(
+                  id:,
+                  message: "Batch execution cancelled due to previous error"
+                )
+              else
+                execute(method, id, expo_instance, params)
+              end
+
+            if output.is_a?(Exception) && batch_failure == :stop
+              cancel_execution = true
+            end
+
             id && output
           end.compact
+
+          responses.any? ? responses : nil
         end
 
         protected def handle_single(expo_instance, params)
@@ -50,7 +67,7 @@ module Verse
           id && out
         end
 
-        def handle(expo_instance)
+        def handle(expo_instance, batch_failure: :continue)
           params = expo_instance.params
 
           if (arr = params[:_body]) && arr.is_a?(Array)
@@ -62,7 +79,7 @@ module Verse
             end
 
             # Batch request
-            handle_batch(expo_instance, arr)
+            handle_batch(expo_instance, arr, batch_failure:)
           else
             # Single request
             handle_single(expo_instance, params)

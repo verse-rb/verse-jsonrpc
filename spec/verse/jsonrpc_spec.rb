@@ -51,8 +51,10 @@ RSpec.describe Verse::JsonRpc::Exposition::Extension, type: :exposition, as: :sy
       end
 
       it "returns an authentication error without credentials" do
-        as_user nil do
-          post "/rpc", json_rpc_request(method, params, request_id)
+        silent do
+          as_user nil do
+            post "/rpc", json_rpc_request(method, params, request_id)
+          end
         end
 
         expect(last_response.status).to eq(401)
@@ -92,7 +94,9 @@ RSpec.describe Verse::JsonRpc::Exposition::Extension, type: :exposition, as: :sy
       let(:request_id) { 456 }
 
       it "returns a JSON-RPC error response" do
-        post "/rpc", json_rpc_request(method, {}, request_id) # No params needed, no auth
+        silent do
+          post "/rpc", json_rpc_request(method, {}, request_id) # No params needed, no auth
+        end
 
         expect(last_response.status).to eq(200)
         body = JSON.parse(last_response.body, symbolize_names: true)
@@ -134,7 +138,9 @@ RSpec.describe Verse::JsonRpc::Exposition::Extension, type: :exposition, as: :sy
         json_rpc_request("raise_error", {}, 4) # Internal error
       ]
 
-      post "/rpc", batch_request, {"CONTENT_TYPE" => "application/json"} # Send the array as the body
+      silent do
+        post "/rpc", batch_request, {"CONTENT_TYPE" => "application/json"} # Send the array as the body
+      end
 
       expect(last_response.status).to eq(200)
       body = JSON.parse(last_response.body, symbolize_names: true)
@@ -177,14 +183,13 @@ RSpec.describe Verse::JsonRpc::Exposition::Extension, type: :exposition, as: :sy
     end
 
     it "handles an empty batch request array" do
-      # Sending an empty array should result in an Invalid Request error from the server/middleware
-      post "/rpc", [], { "CONTENT_TYPE" => "application/json" }
+      silent do
+        # Sending an empty array should result in an Invalid Request error from the server/middleware
+        post "/rpc", [], { "CONTENT_TYPE" => "application/json" }
 
-      # Expecting 422 Unprocessable Entity as Rack/middleware might handle this before JSON-RPC parsing
-      expect(last_response.status).to eq(422)
-      # The body might not be a standard JSON-RPC error in this case,
-      # depending on how the underlying framework handles empty batch requests.
-      # We'll just check the status code for now.
+        # Expecting 422 Unprocessable Entity as Rack/middleware might handle this before JSON-RPC parsing
+        expect(last_response.status).to eq(422)
+      end
     end
 
     it "handles a batch containing only notifications" do
@@ -202,12 +207,13 @@ RSpec.describe Verse::JsonRpc::Exposition::Extension, type: :exposition, as: :sy
     end
 
     it "returns a single error response if the batch array itself is invalid JSON (handled by Rack/middleware)" do
-      # This tests the layer before JSON-RPC parsing
-      post "/rpc", "[{\"jsonrpc\": \"2.0\", \"method\": \"echo\", \"params\": {\"message\": \"Valid\"}, \"id\": 1}, InvalidJSON]", { "CONTENT_TYPE" => "application/json" }
+      silent do
+        # This tests the layer before JSON-RPC parsing
+        post "/rpc", "[{\"jsonrpc\": \"2.0\", \"method\": \"echo\", \"params\": {\"message\": \"Valid\"}, \"id\": 1}, InvalidJSON]", { "CONTENT_TYPE" => "application/json" }
 
-      # Expecting 422 Unprocessable Entity as Rack/middleware handles invalid JSON parsing
-      expect(last_response.status).to eq(422)
-      # Body content might vary depending on the Rack middleware, not necessarily JSON-RPC format.
+        # Expecting 422 Unprocessable Entity as Rack/middleware handles invalid JSON parsing
+        expect(last_response.status).to eq(422)
+      end
     end
 
     it "returns Invalid Request error if batch size exceeds limit" do
@@ -216,10 +222,10 @@ RSpec.describe Verse::JsonRpc::Exposition::Extension, type: :exposition, as: :sy
         json_rpc_request("echo", { message: "test #{i}" }, i + 1)
       end
 
-      post "/rpc", batch_request, { "CONTENT_TYPE" => "application/json" }
+      silent do
+        post "/rpc", batch_request, { "CONTENT_TYPE" => "application/json" }
+      end
 
-      # This is a JSON-RPC level error, so status should be 200
-      pp last_response.body
       expect(last_response.status).to eq(400)
       body = JSON.parse(last_response.body, symbolize_names: true)
 
@@ -237,37 +243,45 @@ RSpec.describe Verse::JsonRpc::Exposition::Extension, type: :exposition, as: :sy
 
   describe "Protocol Error Handling" do
     it "returns Parse Error for invalid JSON" do
-      post "/rpc", "invalid json {", { "CONTENT_TYPE" => "application/json" }
+      silent do
+        post "/rpc", "invalid json {", { "CONTENT_TYPE" => "application/json" }
 
-      # Expecting 422 Unprocessable Entity as Rack/middleware handles invalid JSON parsing
-      expect(last_response.status).to eq(422)
-      # Body content might vary depending on the Rack middleware.
+        # Expecting 422 Unprocessable Entity as Rack/middleware handles invalid JSON parsing
+        expect(last_response.status).to eq(422)
+        # Body content might vary depending on the Rack middleware.
+      end
     end
 
     it "returns Invalid Request for non-object request" do
-      post "/rpc", "123", { "CONTENT_TYPE" => "application/json" }
+      silent do
+        post "/rpc", "123", { "CONTENT_TYPE" => "application/json" }
 
-      # Expecting 422 Unprocessable Entity as Rack/middleware handles non-object requests
-      expect(last_response.status).to eq(422)
-      # Body content might vary depending on the Rack middleware.
+        # Expecting 422 Unprocessable Entity as Rack/middleware handles non-object requests
+        expect(last_response.status).to eq(422)
+        # Body content might vary depending on the Rack middleware.
+      end
     end
 
      it "returns Invalid Request for request missing 'jsonrpc' field" do
-      # Convert hash to JSON string and set content type
-      post "/rpc", { method: "echo", params: { message: "test" }, id: 1 }, { "CONTENT_TYPE" => "application/json" }
+      silent do
+        # Convert hash to JSON string and set content type
+        post "/rpc", { method: "echo", params: { message: "test" }, id: 1 }, { "CONTENT_TYPE" => "application/json" }
 
-      # Expecting 422 Unprocessable Entity as Rack/middleware might handle this validation
-      expect(last_response.status).to eq(422)
-      # Body content might vary depending on the Rack middleware.
+        # Expecting 422 Unprocessable Entity as Rack/middleware might handle this validation
+        expect(last_response.status).to eq(422)
+        # Body content might vary depending on the Rack middleware.
+      end
     end
 
     it "returns Invalid Request for request missing 'method' field" do
-      # Convert hash to JSON string and set content type
-      post "/rpc", { jsonrpc: "2.0", params: { message: "test" }, id: 1 }, { "CONTENT_TYPE" => "application/json" }
+      silent do
+        # Convert hash to JSON string and set content type
+        post "/rpc", { jsonrpc: "2.0", params: { message: "test" }, id: 1 }, { "CONTENT_TYPE" => "application/json" }
 
-      # Expecting 422 Unprocessable Entity as Rack/middleware might handle this validation
-      expect(last_response.status).to eq(422)
-      # Body content might vary depending on the Rack middleware.
+        # Expecting 422 Unprocessable Entity as Rack/middleware might handle this validation
+        expect(last_response.status).to eq(422)
+        # Body content might vary depending on the Rack middleware.
+      end
     end
 
     it "returns Method Not Found for non-existent method" do
