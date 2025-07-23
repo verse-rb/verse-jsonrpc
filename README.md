@@ -138,6 +138,35 @@ When configuring the JSON-RPC endpoint with `json_rpc`, you can provide the foll
 *   `http_opts` (Hash, default: `{}`): Additional options passed to the underlying HTTP exposition layer, like `auth:`.
 *   `validate_output` (Boolean, default: `false`): Whether to validate the output of RPC methods against their defined output schemas. Can impact performance.
 *   `batch_limit` (Integer, default: `100`): The maximum number of requests allowed in a single batch call. Put to `0` to disable batch processing and `nil` to disable the limit.
+*   `batch_failure` (Symbol, default: `:continue`): Defines the behavior when a request in a batch fails. By default, it continues processing other requests. Set to `:stop` to halt on the first error.
+
+## Custom Errors
+
+You can define custom JSON-RPC errors to provide more specific feedback to clients. Custom errors can be created by inheriting from `Verse::JsonRpc::Error` and using the `define` method.
+
+```ruby
+# Define a custom error with a specific code and message
+CustomError = Verse::JsonRpc::Error.define(-32002, "This is a custom error")
+
+# Raise the custom error in your RPC method
+def my_custom_error_method
+  raise CustomError, "Something went wrong"
+end
+```
+
+When `my_custom_error_method` is called, the JSON-RPC response will include the custom error details:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "error": {
+    "code": -32002,
+    "message": "This is a custom error",
+    "data": "Something went wrong"
+  },
+  "id": 1
+}
+```
 
 ## License
 
