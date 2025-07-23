@@ -7,7 +7,6 @@ module Verse
   module JsonRpc
     module Exposition
       module Extension
-
         # Hook on json-rpc method
         def json_rpc_method(method = nil)
           Hook.new(self, method)
@@ -36,7 +35,7 @@ module Verse
 
           if respond_to?(base_method)
             raise ArgumentError,
-              "only one jsonrpc handler is authorized per exposition class"
+                  "only one jsonrpc handler is authorized per exposition class"
           end
 
           exposition = build_expose(
@@ -47,13 +46,12 @@ module Verse
             output(JsonRpc::OutputSchema)
           end
 
-          define_method(base_method){
+          define_method(base_method) do
             self.class.__json_rpc_controller__.handle(self, batch_failure:)
-          }
+          end
 
           attach_exposition base_method, exposition
         end
-
       end
     end
   end

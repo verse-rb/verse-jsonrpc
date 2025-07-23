@@ -4,7 +4,7 @@ module Verse
   module Jsonrpc
     module Exposition
       InputSchema = Verse::Schema.define do
-        field(:jsonrpc, String).rule("must be 2.0"){ |v| v == "2.0" }
+        field(:jsonrpc, String).rule("must be 2.0") { |v| v == "2.0" }
         field(:method, String).filled
         field?(:params, Object)
         field(:id, [String, Integer, NilClass])
@@ -15,7 +15,7 @@ module Verse
       AllowedInput = Verse::Schema.scalar(InputSchema, BatchSchema)
 
       OutputSchema = Verse::Schema.define do
-        field(:jsonrpc, String).rule("must be 2.0"){ |v| v == "2.0" }
+        field(:jsonrpc, String).rule("must be 2.0") { |v| v == "2.0" }
         field(:id, [String, Integer, NilClass])
 
         field?(:result, Object)

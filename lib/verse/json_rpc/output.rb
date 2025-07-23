@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Verse
   module JsonRpc
     CallResult = Struct.new(:result, :id, keyword_init: true) do

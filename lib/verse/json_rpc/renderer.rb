@@ -30,7 +30,7 @@ module Verse
         when Verse::Error::ValidationFailed
           ctx.response.status = 422
           InvalidParamsError.new(message: error.message).to_json
-        when  Verse::JsonRpc::Error
+        when Verse::JsonRpc::Error
           error.to_json
         else
           InternalError.new.to_json

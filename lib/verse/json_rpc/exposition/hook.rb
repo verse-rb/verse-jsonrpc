@@ -34,19 +34,16 @@ module Verse
             #
             # UGLY REPLACE OF METHOD. I'm curious how
             # to replace this with a better solution.
-            expo_instance.define_singleton_method(:params){ safe_params }
+            expo_instance.define_singleton_method(:params) { safe_params }
 
             result = expo_instance.run do
               hook.method.bind(self).call
             end
 
-            if controller.validate_output?
-              result = hook.metablock.process_output(result)
-            end
+            result = hook.metablock.process_output(result) if controller.validate_output?
 
             result
           end
-
         end
       end
     end

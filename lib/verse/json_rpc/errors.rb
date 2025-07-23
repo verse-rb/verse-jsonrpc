@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Verse
   module JsonRpc
     class Error < StandardError
@@ -12,7 +14,7 @@ module Verse
         super message
       end
 
-      def self.define(code, message, data = nil)
+      def self.define(code, message, _data = nil)
         Class.new(self) do
           define_singleton_method(:code) { code }
           define_singleton_method(:message) { message }
@@ -36,14 +38,14 @@ module Verse
       end
     end
 
-    ParseError = Error.define(-32700, "Parse error")
+    ParseError = Error.define(-32_700, "Parse error")
 
-    InvalidRequestError = Error.define(-32600, "Invalid request")
-    MethodNotFoundError = Error.define(-32601, "Method not found")
-    InvalidParamsError = Error.define(-32602, "Invalid params")
-    InternalError = Error.define(-32603, "Internal error")
+    InvalidRequestError = Error.define(-32_600, "Invalid request")
+    MethodNotFoundError = Error.define(-32_601, "Method not found")
+    InvalidParamsError = Error.define(-32_602, "Invalid params")
+    InternalError = Error.define(-32_603, "Internal error")
 
-    AuthenticationError = Error.define(-32001, "Authentication error")
-    ServerError = Error.define(-32000, "Server error")
+    AuthenticationError = Error.define(-32_001, "Authentication error")
+    ServerError = Error.define(-32_000, "Server error")
   end
 end

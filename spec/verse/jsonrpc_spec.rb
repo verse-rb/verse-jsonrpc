@@ -44,10 +44,10 @@ RSpec.describe Verse::JsonRpc::Exposition::Extension, type: :exposition, as: :sy
         expect(last_response.status).to eq(200)
         body = JSON.parse(last_response.body, symbolize_names: true)
         expect(body).to eq({
-          jsonrpc: "2.0",
-          result: { echo_message: "Echo: #{params[:message]}" },
-          id: request_id
-        })
+                             jsonrpc: "2.0",
+                             result: { echo_message: "Echo: #{params[:message]}" },
+                             id: request_id
+                           })
       end
 
       it "returns an authentication error without credentials" do
@@ -66,7 +66,7 @@ RSpec.describe Verse::JsonRpc::Exposition::Extension, type: :exposition, as: :sy
             message: a_kind_of(String) # Check for the presence of an error message
           },
           id: nil # The reason for nil is that the authentication check
-                  # is made before the request is processed
+          # is made before the request is processed
         )
       end
 
@@ -81,11 +81,10 @@ RSpec.describe Verse::JsonRpc::Exposition::Extension, type: :exposition, as: :sy
           error: {
             code: Verse::JsonRpc::InvalidParamsError.code,
             message: "message: is required",
-            data: {message: ["is required"]}
+            data: { message: ["is required"] }
           },
           id: request_id
         )
-
       end
     end
 
@@ -104,7 +103,7 @@ RSpec.describe Verse::JsonRpc::Exposition::Extension, type: :exposition, as: :sy
           jsonrpc: "2.0",
           error: {
             code: Verse::JsonRpc::InternalError.code, # Or a more specific code if mapped
-            message: "This is a test error",
+            message: "This is a test error"
           },
           id: request_id
         )
@@ -132,14 +131,14 @@ RSpec.describe Verse::JsonRpc::Exposition::Extension, type: :exposition, as: :sy
     it "handles a batch of valid requests (including success and error)" do
       batch_request = [
         json_rpc_request("echo", { message: "batch echo" }, 1), # ok
-        json_rpc_request("echo", { }, 2), # missing required param
+        json_rpc_request("echo", {}, 2), # missing required param
         json_rpc_notification("echo", { message: "batch notification" }), # Notification in batch
         json_rpc_request("non_existent_method", {}, 3), # Method not found error
         json_rpc_request("raise_error", {}, 4) # Internal error
       ]
 
       silent do
-        post "/rpc", batch_request, {"CONTENT_TYPE" => "application/json"} # Send the array as the body
+        post "/rpc", batch_request, { "CONTENT_TYPE" => "application/json" } # Send the array as the body
       end
 
       expect(last_response.status).to eq(200)
@@ -209,7 +208,8 @@ RSpec.describe Verse::JsonRpc::Exposition::Extension, type: :exposition, as: :sy
     it "returns a single error response if the batch array itself is invalid JSON (handled by Rack/middleware)" do
       silent do
         # This tests the layer before JSON-RPC parsing
-        post "/rpc", "[{\"jsonrpc\": \"2.0\", \"method\": \"echo\", \"params\": {\"message\": \"Valid\"}, \"id\": 1}, InvalidJSON]", { "CONTENT_TYPE" => "application/json" }
+        post "/rpc",
+             "[{\"jsonrpc\": \"2.0\", \"method\": \"echo\", \"params\": {\"message\": \"Valid\"}, \"id\": 1}, InvalidJSON]", { "CONTENT_TYPE" => "application/json" }
 
         # Expecting 422 Unprocessable Entity as Rack/middleware handles invalid JSON parsing
         expect(last_response.status).to eq(422)
@@ -262,7 +262,7 @@ RSpec.describe Verse::JsonRpc::Exposition::Extension, type: :exposition, as: :sy
       end
     end
 
-     it "returns Invalid Request for request missing 'jsonrpc' field" do
+    it "returns Invalid Request for request missing 'jsonrpc' field" do
       silent do
         # Convert hash to JSON string and set content type
         post "/rpc", { method: "echo", params: { message: "test" }, id: 1 }, { "CONTENT_TYPE" => "application/json" }
@@ -299,5 +299,4 @@ RSpec.describe Verse::JsonRpc::Exposition::Extension, type: :exposition, as: :sy
       )
     end
   end
-
 end

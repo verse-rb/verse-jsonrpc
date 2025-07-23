@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Verse
   module JsonRpc
     module Method
@@ -13,7 +15,7 @@ module Verse
             raise JsonRpc::MethodNotFoundError.new(id:)
           end
 
-          output = entry.execute(
+          entry.execute(
             id,
             params,
             exposition_instance

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Verse
   module JsonRpc
     module Exposition
@@ -11,9 +13,7 @@ module Verse
 
           def input(value = Nothing, &block)
             if value != Nothing
-              if block_given?
-                raise ArgumentError, "input value and block given at the same time"
-              end
+              raise ArgumentError, "input value and block given at the same time" if block_given?
 
               @input = value
               self
@@ -27,9 +27,7 @@ module Verse
 
           def output(value = Nothing, &block)
             if value != Nothing
-              if block_given?
-                raise ArgumentError, "output value and block given at the same time"
-              end
+              raise ArgumentError, "output value and block given at the same time" if block_given?
 
               @output = value
               self
@@ -54,7 +52,6 @@ module Verse
               callback: call
             )
           end
-
         end
 
         attr_reader :methods

@@ -17,5 +17,5 @@ gem "bootsnap", "~> 1.16"
 gem "pry"
 gem "simplecov"
 
-gem "rubocop", "~> 1.21"
 gem "relaxed-rubocop"
+gem "rubocop", "~> 1.21"
