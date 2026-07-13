@@ -50,6 +50,14 @@ module Verse
           end
 
           define_method(base_method) do
+            # the outer, request-level auth-checked
+            # gate is redundant for JSON-RPC — real per-action authorization is already
+            # enforced independently by each method's own repository call
+            # (scoped()/can!). The outer gate should stop trying to infer "was auth
+            # checked" from whether any item happened to reach business logic, and instead
+            # just be marked satisfied up front for JSON-RPC requests, since the inner,
+            # per-item mechanism is what's actually doing the enforcement.
+            auth_context.mark_as_checked!
             self.class.__json_rpc_controller__.handle(self, batch_failure:)
           end
 
